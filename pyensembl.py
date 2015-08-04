@@ -7,7 +7,9 @@
 ### ** Import
 
 import sys
+import os
 import subprocess
+import time
 from bs4 import BeautifulSoup
 
 ### ** Parameters
@@ -116,13 +118,21 @@ class EMBLspeciesIndex(object) :
     for downloading the species EMBL files
     """
 
-    def __init__(self, htmlContent = None) :
+    def __init__(self, html = None, table = None) :
         """HTML content (str) can be provided and will be parsed by the 
-        parseIndexHtml method
+        parseIndexHtml method, or a tabular file content can also be provided.
+
+        Args:
+            html (str): Html content from an Ensembl index page
+            table (str): Tabular content from a table file
+
         """
         self.mapping = dict()
-        if htmlContent is not None :
-            self.parseIndexHtml(htmlContent)
+        assert not (html is not None and table is not None)
+        if html is not None :
+            self.parseHtml(html)
+        if table is not None :
+            self.load(table)
 
     def __len__(self) :
         return len(self.mapping)
@@ -146,3 +156,43 @@ class EMBLspeciesIndex(object) :
         mapping = filterAccNumBySpecies(self.mapping, species)
         o.mapping.update(mapping)
         return o
+
+    def load(self, inFile) :
+        """Load the content of a tabular file to update the current mapping
+
+        Args:
+            inFile (str): Path to the input file
+
+        """
+        o = dict()
+        with open(inFile, "r") as fi :
+            for line in fi :
+                line = line.strip().split("\t")
+                o[line[0]] = line[1]
+        self.mapping.update(o)
+    
+    def write(self, outFile) :
+        """Write the current mapping to a tabular file
+
+        Args:
+            outFile (str): Path to the output file
+
+        """
+        with open(outFile, "w") as fo :
+            for (k, v) in self.mapping.items() :
+                fo.write("\t".join([k, v]) + "\n")
+
+    def downloadAll(self, outDir = ".", force = False) :
+        """Download all the EMBL records present in the mapping.
+
+        Args:
+            outDir (str): Path to the output directory (default: ".")
+            force (bool): Download a file even if already present on disk?
+
+        """
+        for (k, v) in self.mapping.items() :
+            outFile = os.path.join(outDir, ".".join([k, v]).replace(" ", "-") + ".EMBL.gz")
+            if not os.path.isfile(outFile) :
+                url = "http://www.ebi.ac.uk/ena/data/view/" + v + "&display=text&download=gzip"
+                downloadUrl(url, outFile)
+                time.sleep(10)
