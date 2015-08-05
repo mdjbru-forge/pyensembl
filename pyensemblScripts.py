@@ -40,9 +40,13 @@ def makeParser() :
                            help = "Html index file from Ensembl (if not specified, "
                            "the program will download the page from "
                            "http://bacteria.ensembl.org/info/website/ftp/index.html)")
-    sp_search.add_argument("-d", "--download", action = "store_true",
+    sp_search.add_argument("-d", "--download", action = "store_true", 
                            help = "Download the EMBL files. If not specified, "
                            "just write the species accession numbers to stdout.")
+    sp_search.add_argument("-o", "--outDir", metavar = "DIR", type = str,
+                           default = ".", 
+                           help = "Destination directory for downloading ("
+                           "default: current directory)")
     sp_search.add_argument("-c", "--count", action = "store_true",
                            help = "Only send the record count to stdout, not "
                            "the full record information")
@@ -99,4 +103,4 @@ def main_search(args, stdout, stderr) :
     else :
         stdout.write(EMBLtable)
     if args.download :
-        EMBLspecies.downloadAll()
+        EMBLspecies.downloadAll(outDir = args.outDir)
