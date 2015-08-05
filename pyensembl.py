@@ -70,16 +70,24 @@ def parseHtmlToAccNum(htmlContent, previousData = None, stderr = None) :
     spAccMapping.update(previousData)
     for r in speciesRows :
         cells = r.find_all("td")
-        assert len(cells) == 9;
-        species = cells[0].get_text()
-        if "EMBL" in cells[4].get_text() :
-            href = cells[4].find("a").get("href")
-            accNum = href.split("/view/")[1].split("&display")[0]
-            assert not spAccMapping.get(species, False)
-            spAccMapping[species] = accNum
-        else :
-            msg = "No EMBL entry for " + species + "\n"
-            stderr.write(msg)
+        if len(cells) > 0 :
+            assert len(cells) == 9;
+            species = cells[0].get_text()
+            if "EMBL" in cells[4].get_text() :
+                href = cells[4].find("a").get("href")
+                accNum = href.split("/view/")[1].split("&display")[0]
+                assert not spAccMapping.get(species, False)
+                spAccMapping[species] = accNum
+            else :
+                if species == "" :
+                    species = "???"
+                try :
+                    msg = ("No EMBL entry for species " + species + " (DNA "
+                           "link: " + cells[1].find("a").get("href") + ")\n" )
+                except :
+                    msg = ("No EMBL entry for species " + species + " (row " +
+                           str(r) + ")\n" )
+                stderr.write(msg)
     return spAccMapping
 
 ### ** filterAccNumBySpecies(spAccMapping, species)
@@ -179,9 +187,17 @@ class EMBLspeciesIndex(object) :
 
         """
         with open(outFile, "w") as fo :
-            for (k, v) in self.mapping.items() :
-                fo.write("\t".join([k, v]) + "\n")
+            fo.write(self.makeTable())
 
+    def makeTable(self) :
+        """Produce a table for the current mapping
+
+        """
+        o = ""
+        for (k, v) in self.mapping.items() :
+            o += "\t".join([k, v]) + "\n"
+        return o
+                        
     def downloadAll(self, outDir = ".", force = False) :
         """Download all the EMBL records present in the mapping.
 
