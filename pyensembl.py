@@ -207,7 +207,9 @@ class EMBLspeciesIndex(object) :
 
         """
         for (k, v) in self.mapping.items() :
-            outFile = os.path.join(outDir, ".".join([k, v]).replace(" ", "-") + ".EMBL.gz")
+            outFile = os.path.join(outDir,
+                                   ".".join([k, v]).replace(" ", "-").replace("/", "<SLASH>") +
+                                   ".EMBL.gz")
             if not os.path.isfile(outFile) :
                 url = "http://www.ebi.ac.uk/ena/data/view/" + v + "&display=text&download=gzip"
                 downloadUrl(url, outFile)
