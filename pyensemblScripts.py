@@ -23,6 +23,8 @@ import pyensembl as pyensembl
 
 DB_FOLDER = "~"
 DB_FOLDER = os.path.expanduser(DB_FOLDER)
+# Colors
+PC = pyensembl.PC
 
 ### * Parser
 
@@ -37,14 +39,10 @@ def makeParser() :
     subparsers = parser.add_subparsers()
     ### ** Search and download EMBL files
     sp_search = subparsers.add_parser("search",
-                                      help = "Search and download EMBL entries "
+                                      help = "Search entries "
                                       "for a given species or strain")
     sp_search.add_argument("species", metavar = "SPECIES", type = str,
                            help = "Query string for the species or strain")
-    sp_search.add_argument("-i", "--index", metavar = "HTMLFILE", type = str,
-                           help = "Html index file from Ensembl (if not specified, "
-                           "the program will download the page from "
-                           "http://bacteria.ensembl.org/info/website/ftp/index.html)")
     sp_search.add_argument("-d", "--download", action = "store_true", 
                            help = "Download the EMBL files. If not specified, "
                            "just write the species accession numbers to stdout.")
@@ -97,36 +95,30 @@ def main(args = None, stdout = None, stderr = None) :
 ### ** Main search
 
 def main_search(args, stdout, stderr) :
-    deleteIndex = False
-    if args.index is None :
-        # Download the index file from Ensembl
-        tag = "".join([random.choice("0123456789abcdef") for x in range(6)])
-        outFile = "tmp." + tag
-        pyensembl.downloadUrl(pyensembl.ENSEMBL_INDEX_URL, outFile)
-        args.index = outFile
-        deleteIndex = True
-    with open(args.index, "r") as fi :
-        htmlContent = fi.read()
-    EMBLmapping = pyensembl.EMBLspeciesIndex(html = htmlContent)
-    if deleteIndex :
-        os.remove(args.index)
-    EMBLspecies = EMBLmapping.searchSpecies(args.species)
-    EMBLtable = EMBLspecies.makeTable()
-    EMBLcount = len(EMBLspecies)
-    if args.count :
-        stdout.write(str(EMBLcount) + "\n")
+    # Look for database files
+    files = [x for x in os.listdir(DB_FOLDER) if x.startswith(".pyensembl-bacteria-species.")]
+    files.sort()
+    if len(files) > 0:
+        dbFile = files[-1]
+        print(PC.G + "Database file used: %s" % dbFile + PC.E)
     else :
-        stdout.write(EMBLtable)
-    if args.download :
-        EMBLspecies.downloadAll(outDir = args.outDir)
-
+        print(PC.F + "No database file found.\nRun \"pyensembl refresh\" first." + PC.E)
+        sys.exit()
+    # Perform the search
+    species = pyensembl.loadJson(os.path.join(DB_FOLDER, dbFile))
+    species = [x for x in species["species"] if args.species.lower() in x["name"].lower()]
+    print(PC.G + "Species found: %i" % len(species) + PC.E)
+    spNames = [x["name"] for x in species]
+    spNames.sort()
+    for sp in spNames:
+        print(PC.Y + "    " + sp + PC.E)
+        
 ### ** Main Refresh
 
 def main_refresh(args, stdout, stderr):
     if args.check:
         # Look for database files
         files = [x for x in os.listdir(DB_FOLDER) if x.startswith(".pyensembl-bacteria-species.")]
-        PC = pyensembl.PC
         print(PC.G + "Database files found in %s (%i)" % (DB_FOLDER, len(files)) + PC.E)
         for f in files:
             print(PC.Y + "    " + f + PC.E)
