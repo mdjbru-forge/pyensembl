@@ -19,6 +19,11 @@ import argparse
 import random
 import pyensembl as pyensembl
 
+### ** Parameters
+
+DB_FOLDER = "~"
+DB_FOLDER = os.path.expanduser(DB_FOLDER)
+
 ### * Parser
 
 def makeParser() :
@@ -30,7 +35,7 @@ def makeParser() :
     """
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
-    # Search and download EMBL files
+    ### ** Search and download EMBL files
     sp_search = subparsers.add_parser("search",
                                       help = "Search and download EMBL entries "
                                       "for a given species or strain")
@@ -51,7 +56,16 @@ def makeParser() :
                            help = "Only send the record count to stdout, not "
                            "the full record information")
     sp_search.set_defaults(action = "search")
-    # Return
+    ### ** Refresh bacteria info database
+    sp_refresh = subparsers.add_parser("refresh",
+                                       help = "Without any argument, Refresh the local "
+                                       "information about "
+                                       "available bacteria species in Ensembl")
+    sp_refresh.add_argument("-c", "--check", action = "store_true",
+                            help = "Check for existence of local information about "
+                            "bacteria species in Ensembl")
+    sp_refresh.set_defaults(action = "refresh")
+    ### ** Return
     return parser
     
 ### * Mains
@@ -77,6 +91,7 @@ def main(args = None, stdout = None, stderr = None) :
         stderr = sys.stderr
     dispatch = dict()
     dispatch["search"] = main_search
+    dispatch["refresh"] = main_refresh
     dispatch[args.action](args, stdout, stderr)
 
 ### ** Main search
@@ -104,3 +119,20 @@ def main_search(args, stdout, stderr) :
         stdout.write(EMBLtable)
     if args.download :
         EMBLspecies.downloadAll(outDir = args.outDir)
+
+### ** Main Refresh
+
+def main_refresh(args, stdout, stderr):
+    if args.check:
+        # Look for database files
+        files = [x for x in os.listdir(DB_FOLDER) if x.startswith(".pyensembl-bacteria-species.")]
+        PC = pyensembl.PC
+        print(PC.G + "Database files found in %s (%i)" % (DB_FOLDER, len(files)) + PC.E)
+        for f in files:
+            print(PC.Y + "    " + f + PC.E)
+    if not args.check:
+        # Download information using REST
+        speciesData = pyensembl.downloadBacteriaSpecies()
+        dbFile = os.path.join(DB_FOLDER, ".pyensembl-bacteria-species." +
+                              pyensembl.fileTimestamp())
+        pyensembl.saveJson(speciesData, dbFile)

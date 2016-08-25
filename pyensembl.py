@@ -43,6 +43,12 @@ def timestamp(padding = 4) :
     out = "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
     return out + padding * " "
 
+### ** fileTimestamp()
+
+def fileTimestamp() :
+    out = "{:%Y-%m-%d-%H-%M-%S}".format(datetime.datetime.now())
+    return out
+
 ### ** downloadBacteriaSpecies()
 
 def downloadBacteriaSpecies():
