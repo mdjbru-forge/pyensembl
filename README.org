@@ -1,0 +1,35 @@
+* Installation
+
+#+BEGIN_SRC 
+pip install --user --upgrade git+https://github.com/mdjbru-forge/pyensembl
+#+END_SRC
+
+* Basic usage
+
+#+BEGIN_SRC 
+pyensembl search -h
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+usage: pyensembl search [-h] [-i HTMLFILE] [-d] [-o DIR] [-c] SPECIES
+
+positional arguments:
+  SPECIES               Query string for the species or strain
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i HTMLFILE, --index HTMLFILE
+                        Html index file from Ensembl (if not specified, the
+                        program will download the page from http://bacteria.en
+                        sembl.org/info/website/ftp/index.html)
+  -d, --download        Download the EMBL files. If not specified, just write
+                        the species accession numbers to stdout.
+  -o DIR, --outDir DIR  Destination directory for downloading (default:
+                        current directory)
+  -c, --count           Only send the record count to stdout, not the full
+                        record information
+#+END_EXAMPLE
+
+#+BEGIN_SRC 
+pyensembl search serratia
+#+END_SRC
