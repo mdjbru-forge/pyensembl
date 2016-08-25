@@ -12,12 +12,93 @@ import subprocess
 import time
 from bs4 import BeautifulSoup
 
+import datetime
+import requests, sys
+import json
+
 ### ** Parameters
 
 ENSEMBL_INDEX_URL = "http://bacteria.ensembl.org/info/website/ftp/index.html"
+ENSEMBL_REST_SERVER = "http://rest.ensemblgenomes.org"
+
+### *** Colors
+
+# http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+class PC:
+    H = '\033[95m' # header (purple)
+    B = '\033[94m' # blue
+    G = '\033[92m' # green
+    W = '\033[93m' # warning (yellow)
+    Y = '\033[93m'
+    F = '\033[91m' # fail (red)
+    E = '\033[0m' # end colors
+    BD = '\033[1m' # bold
+    U = '\033[4m' # underlined
 
 ### * Functions
 
+### ** timestamp()
+
+def timestamp(padding = 4) :
+    out = "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
+    return out + padding * " "
+
+### ** downloadBacteriaSpecies()
+
+def downloadBacteriaSpecies():
+    """Request the list of species from Ensembl Bacteria using the REST API.
+    Code modified from http://rest.ensemblgenomes.org/documentation/info/species
+
+    Returns:
+        json object: The species information
+    """
+    server = ENSEMBL_REST_SERVER
+    ext = "/info/species?division=EnsemblBacteria"
+    print(PC.B + timestamp() + "Downloading information about species in EnsemblBacteria" + PC.E)
+    print(PC.Y + "Server: %s" % server + PC.E)
+    print(PC.Y + "Request: %s" % ext + PC.E)
+    r = requests.get(server + ext,
+                     headers = {"Content-Type" : "application/json"})
+    if not r.ok:
+        r.raise_for_status()
+        sys.exit()
+    print(PC.G + timestamp() + "Request successful" + PC.E)
+    return r.json()
+
+### ** saveJson(jsonData, outFile)
+
+def saveJson(jsonData, outFile):
+    """Save json data to an output file
+
+    Args:
+        jsonData (json object): Data to save
+        outFile (str): Path to the output file
+
+    Returns:
+        None
+    """
+    print(PC.B + timestamp() + "Saving JSON data to %s" % outFile + PC.E)
+    with open(outFile, "w") as fo:
+        json.dump(jsonData, fo)
+    print(PC.G + timestamp() + "Saving successfull" + PC.E)
+
+### ** loadJson(inFile)
+
+def loadJson(inFile):
+    """Load json data from an input file
+
+    Args:
+        inFile (str): Path to the input file
+
+    Returns:
+        A json object
+    """
+    print(PC.B + timestamp() + "Loading JSON data from %s" % inFile + PC.E)
+    with open(inFile, "r") as fi:
+        data = json.load(fi)
+    print(PC.G + timestamp() + "Loading successfull" + PC.E)
+    return data
+    
 ### ** downloadUrl(url, outFile = None)
 
 def downloadUrl(url, outFile = None) :
