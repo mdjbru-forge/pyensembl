@@ -66,3 +66,53 @@ This step can take time as the information is retrieved one genome at a time.
 #+BEGIN_SRC 
 pyensembl genomes -f search.results2 > genomes.results
 #+END_SRC
+
+** Download sequence data
+
+(*Note:* For now only the GenBank format download is implemented.)
+
+*** Available formats on EnsemblBacteria ftp
+
+Available formats are:
+- EMBL
+- FASTA
+- GenBank
+- Gff3
+- gtf
+- mySQL
+- rdf
+- tsv
+- vep
+
+**** GenBank format
+
+This format (GenBank flat file) might be the most convenient to get all the
+information in one go. The format is rich, with DNA sequence, CDS, translated
+protein sequences and external references such as GO annotations.
+
+**** FASTA format
+
+For each genome, the available data on EnsemblBacteria as FASTA files is:
+- DNA
+  + DNA / DNA repeat-masked / DNA soft repeat-masked
+  + top level / chromosome / non-chromosomal
+- CDS
+  + All CDS (known, novel and pseudo gene predictions)
+- cDNA
+  + cDNA all / cDNA ab initio
+- peptides
+  + pep all / pep ab initio
+- ncRNA
+  + non-coding RNA genes
+
+*** Download GenBank files for a list of genomes
+
+Genome information is read from a tab-separated file, as is produced by
+=pyensembl genomes=.
+
+#+BEGIN_SRC 
+# Done previously: retrieve genome information
+pyensembl genomes -t serratia > serratia.genomes.results
+# Download data for those genomes
+pyensembl download -g serratia.genomes.results -f genbank
+#+END_SRC

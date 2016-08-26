@@ -18,6 +18,7 @@ import sys
 import argparse
 import random
 import pyensembl as pyensembl
+import ftplib
 
 ### ** Parameters
 
@@ -25,6 +26,8 @@ DB_FOLDER = "~"
 DB_FOLDER = os.path.expanduser(DB_FOLDER)
 # Colors
 PC = pyensembl.PC
+# EnsemblBacteria
+FTP_GENBANK_ROOT = "pub/bacteria/current/genbank/"
 
 ### * Parser
 
@@ -74,6 +77,18 @@ def makeParser() :
                            "\"Enterobacteriaceae\"). Information about all available "
                            "genomes beneath this node will be retrieved.")
     sp_genome.set_defaults(action = "genomes")
+    ### ** Download genome data
+    sp_download = subparsers.add_parser("download",
+                                        help = "Download sequence data for a list of "
+                                        "genomes")
+    sp_download.add_argument("-g", "--genomeList", metavar = "GENOMES_TABLE",
+                             type = str, help = "Tab-separated file containing genomes "
+                             "information", nargs = 1)
+    sp_download.add_argument("-f", "--format", metavar = "FORMAT", type = str,
+                             choices = ["genbank"], nargs = 1,
+                             help = "Format to retrieve (only \"genbank\" "
+                             "implemented for now)")
+    sp_download.set_defaults(action = "download")
     ### ** Return
     return parser
     
@@ -102,9 +117,10 @@ def main(args = None, stdout = None, stderr = None) :
     dispatch["refresh"] = main_refresh
     dispatch["search"] = main_search
     dispatch["genomes"] = main_genomes
+    dispatch["download"] = main_download
     dispatch[args.action](args, stdout, stderr)
-
-### ** Main Refresh
+    
+### ** Main refresh
 
 def main_refresh(args, stdout, stderr):
     if args.check:
@@ -170,3 +186,30 @@ def main_genomes(args, stdout, stderr):
                      "\n" + PC.E)
     # Write the output
     stdout.write(pyensembl.dumpEnsemblInfoGenomes(genomes))
+
+### ** Main download
+
+def main_download(args, stdout, stderr):
+    # Load genome information
+    info = []
+    with open(args.genomeList[0], "r") as fi:
+        header = fi.next().strip().split("\t")
+        for line in fi:
+            if line.strip() != "":
+                info.append(dict(zip(header, line.strip().split("\t"))))
+    stderr.write(PC.G + "%i genomes found" % len(info) + PC.E + "\n")
+    # Download the genome data
+    # Probably not portable way, but should work for now
+    # http://stackoverflow.com/questions/111954/using-pythons-ftplib-to-get-a-directory-listing-portably
+    ftp = ftplib.FTP()
+    ftp.connect("ftp.ensemblgenomes.org")
+    ftp.login() # Anonymous login
+    for genome in info:
+        collection = genome["dbname"].split("_collection")[0] + "_collection"
+        ftpPath = FTP_GENBANK_ROOT + "/" + collection + "/" + genome["species"]
+        ftpDir = []
+        ftp.dir(ftpPath, ftpDir.append)
+        ftpDir = [x.split(" ")[-1] for x in ftpDir]
+        # Keep only files of interest
+        ftpDir = [x for x in ftpDir if x not in ["CHECKSUMS", "README"] and "plasmid" not in x]
+
