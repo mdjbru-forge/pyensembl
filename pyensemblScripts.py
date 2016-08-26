@@ -19,6 +19,7 @@ import argparse
 import random
 import pyensembl as pyensembl
 import ftplib
+import urllib
 
 ### ** Parameters
 
@@ -212,4 +213,13 @@ def main_download(args, stdout, stderr):
         ftpDir = [x.split(" ")[-1] for x in ftpDir]
         # Keep only files of interest
         ftpDir = [x for x in ftpDir if x not in ["CHECKSUMS", "README"] and "plasmid" not in x]
-
+        # Download
+        # http://stackoverflow.com/questions/11573817/how-to-download-a-file-via-ftp-with-python-ftplib
+        for target in ftpDir:
+            print(PC.G + "Retrieving %s" % genome["species"] + PC.E)
+            fo = open(target, "w")
+            target = (FTP_GENBANK_ROOT + "/" +
+                     collection + "/" + genome["species"] + "/" + target)
+            print(target)
+            ftp.retrbinary("RETR %s" % target, fo.write)
+            fo.close()
