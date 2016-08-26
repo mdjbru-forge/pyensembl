@@ -1,10 +1,23 @@
+=pyensembl= is a light Python script using the REST API to query information
+and download data from [[http://bacteria.ensembl.org/index.html][Ensembl Bacteria]].
+
 * Installation
 
 #+BEGIN_SRC 
 pip install --user --upgrade git+https://github.com/mdjbru-forge/pyensembl
 #+END_SRC
 
-* Basic usage
+* In a nutshell
+
+To download all available genomes for the taxon "Serratia":
+
+#+BEGIN_SRC 
+pyensembl genomes -t serratia > myGenomes.list
+mkdir myGenomes.files
+pyensembl download -g myGenomes.list -f genbank -d myGenomes.files
+#+END_SRC
+
+* Detailled usage
 
 ** Get information about the genomes to download
 
@@ -71,7 +84,29 @@ pyensembl genomes -f search.results2 > genomes.results
 
 (*Note:* For now only the GenBank format download is implemented.)
 
-*** Available formats on EnsemblBacteria ftp
+(*Note:* Plasmid genbank files are automatically filtered out and not
+downloaded.)
+
+*** Download GenBank files for a list of genomes
+
+Use =pyensembl download= to download sequence data for a list of genomes.
+
+Genome information is read from a tab-separated file, e.g. produced by
+=pyensembl genomes=.
+
+The only format of retrieved data is GenBank flat file for now.
+
+Downloaded files can be sent to a destination folder with the =-d= option.
+
+#+BEGIN_SRC 
+# Done previously: retrieve genome information
+pyensembl genomes -t serratia > serratia.genomes.results
+# Download data for those genomes
+mkdir myGenomes
+pyensembl download -g serratia.genomes.results -f genbank -d myGenomes
+#+END_SRC
+
+*** Other formats available on EnsemblBacteria ftp
 
 Available formats are:
 - EMBL
@@ -104,23 +139,3 @@ For each genome, the available data on EnsemblBacteria as FASTA files is:
   + pep all / pep ab initio
 - ncRNA
   + non-coding RNA genes
-
-*** Download GenBank files for a list of genomes
-
-Use =pyensembl download= to download sequence data for a list of genomes.
-
-Genome information is read from a tab-separated file, e.g. produced by
-=pyensembl genomes=.
-
-The only format of retrieved data is GenBank flat file for now.
-
-Downloaded files can be sent to a destination folder with the =-d= option.
-
-#+BEGIN_SRC 
-# Done previously: retrieve genome information
-pyensembl genomes -t serratia > serratia.genomes.results
-# Download data for those genomes
-mkdir myGenomes
-pyensembl download -g serratia.genomes.results -f genbank -d myGenomes
-#+END_SRC
-
