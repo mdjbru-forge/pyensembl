@@ -99,10 +99,10 @@ def loadJson(inFile):
     Returns:
         A json object
     """
-    print(PC.B + timestamp() + "Loading JSON data from %s" % inFile + PC.E)
+    #print(PC.B + timestamp() + "Loading JSON data from %s" % inFile + PC.E)
     with open(inFile, "r") as fi:
         data = json.load(fi)
-    print(PC.G + timestamp() + "Loading successfull" + PC.E)
+    #print(PC.G + timestamp() + "Loading successfull" + PC.E)
     return data
     
 ### ** downloadUrl(url, outFile = None)
@@ -203,6 +203,38 @@ def filterAccNumBySpecies(spAccMapping, species) :
         if species in k.lower().replace("_", " ") :
             o[k] = v
     return o
+
+### ** dumpEnsemblInfoSpecies(speciesList)
+
+def dumpEnsemblInfoSpecies(speciesList):
+    """Convert a list of bacteria species information to a string ready to
+    be written to a file.
+
+    Args:
+        speciesList (list): List of dict from downloadBacteriaSpecies()["species"]
+          e.g. : {u'accession': u'GCA_001187685.1',
+                  u'aliases': [u'chryseobacterium sp. hurlbut01',
+                    u'chryseobacterium sp. hurlburt 01',
+                    u'chryseobacterium sp. hurlbut01 str. hurlburt01 str. hurlburt 01'],
+                  u'assembly': u'ASM118768v1',
+                  u'common_name': None,
+                  u'display_name': u'Chryseobacterium sp. Hurlbut01',
+                  u'division': u'EnsemblBacteria',
+                  u'groups': [u'core'],
+                  u'name': u'chryseobacterium_sp_hurlbut01',
+                  u'release': 85,
+                  u'taxon_id': u'1681828'}
+
+    Returns:
+        Str
+    """
+    FIELDS = ["accession", "assembly", "common_name", "display_name",
+              "division", "name", "release", "taxon_id"]
+    out = ""
+    out += "\t".join(FIELDS) + "\n"
+    for sp in speciesList:
+        out += "\t".join([str(sp[f]) for f in FIELDS]) + "\n"
+    return out
 
 ### * Classes
 

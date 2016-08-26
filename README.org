@@ -6,30 +6,37 @@ pip install --user --upgrade git+https://github.com/mdjbru-forge/pyensembl
 
 * Basic usage
 
-#+BEGIN_SRC 
-pyensembl search -h
-#+END_SRC
+** Get information about available species
 
-#+BEGIN_EXAMPLE
-usage: pyensembl search [-h] [-i HTMLFILE] [-d] [-o DIR] [-c] SPECIES
-
-positional arguments:
-  SPECIES               Query string for the species or strain
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i HTMLFILE, --index HTMLFILE
-                        Html index file from Ensembl (if not specified, the
-                        program will download the page from http://bacteria.en
-                        sembl.org/info/website/ftp/index.html)
-  -d, --download        Download the EMBL files. If not specified, just write
-                        the species accession numbers to stdout.
-  -o DIR, --outDir DIR  Destination directory for downloading (default:
-                        current directory)
-  -c, --count           Only send the record count to stdout, not the full
-                        record information
-#+END_EXAMPLE
+The first step is to get the information about bacteria species available in
+EnsemblBacteria:
 
 #+BEGIN_SRC 
-pyensembl search serratia
+pyensembl refresh
 #+END_SRC
+
+This will download and save the information in a JSON format in a file
+=.pyensembl-bacteria-species.<timestamp>= in your home folder.
+
+One can check the JSON files available locally with:
+
+#+BEGIN_SRC 
+pyensembl refresh -c
+#+END_SRC
+
+The next steps (search) will automatically use the most recent local JSON file.
+
+** Search among available species
+
+To search among the available species for a string, use =pyensembl search=. The
+string will be searched in the =name= and =display_name= fields
+(case-insensitive).
+
+#+BEGIN_SRC 
+pyensembl search serratia > search.results
+pyensembl search "Serratia marcescens" > search.results2
+#+END_SRC
+
+The information about matching species is sent to stdout and can be saved to a
+file using the redirection symbol =>=.
+

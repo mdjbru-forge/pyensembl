@@ -100,19 +100,17 @@ def main_search(args, stdout, stderr) :
     files.sort()
     if len(files) > 0:
         dbFile = files[-1]
-        print(PC.G + "Database file used: %s" % dbFile + PC.E)
+        stderr.write(PC.G + "Database file used: %s" % dbFile + PC.E + "\n")
     else :
-        print(PC.F + "No database file found.\nRun \"pyensembl refresh\" first." + PC.E)
+        stderr.write(PC.F + "No database file found.\nRun \"pyensembl refresh\" first." + PC.E + "\n")
         sys.exit()
     # Perform the search
     species = pyensembl.loadJson(os.path.join(DB_FOLDER, dbFile))
-    species = [x for x in species["species"] if args.species.lower() in x["name"].lower()]
-    print(PC.G + "Species found: %i" % len(species) + PC.E)
-    spNames = [x["name"] for x in species]
-    spNames.sort()
-    for sp in spNames:
-        print(PC.Y + "    " + sp + PC.E)
-        
+    species = [x for x in species["species"] if args.species.lower() in x["name"].lower() or
+               args.species.lower() in x["display_name"].lower()]
+    stderr.write(PC.G + "Species found: %i" % len(species) + PC.E + "\n")
+    stdout.write(pyensembl.dumpEnsemblInfoSpecies(species))
+    
 ### ** Main Refresh
 
 def main_refresh(args, stdout, stderr):
