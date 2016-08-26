@@ -1,6 +1,9 @@
 =pyensembl= is a light Python script using the REST API to query information
 and download data from [[http://bacteria.ensembl.org/index.html][Ensembl Bacteria]].
 
+*Note:* This is a project which is still being written and the command names
+and options might change in the future.
+
 * Installation
 
 #+BEGIN_SRC 
