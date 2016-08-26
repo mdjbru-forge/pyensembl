@@ -107,12 +107,20 @@ For each genome, the available data on EnsemblBacteria as FASTA files is:
 
 *** Download GenBank files for a list of genomes
 
-Genome information is read from a tab-separated file, as is produced by
+Use =pyensembl download= to download sequence data for a list of genomes.
+
+Genome information is read from a tab-separated file, e.g. produced by
 =pyensembl genomes=.
+
+The only format of retrieved data is GenBank flat file for now.
+
+Downloaded files can be sent to a destination folder with the =-d= option.
 
 #+BEGIN_SRC 
 # Done previously: retrieve genome information
 pyensembl genomes -t serratia > serratia.genomes.results
 # Download data for those genomes
-pyensembl download -g serratia.genomes.results -f genbank
+mkdir myGenomes
+pyensembl download -g serratia.genomes.results -f genbank -d myGenomes
 #+END_SRC
+

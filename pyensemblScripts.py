@@ -89,6 +89,9 @@ def makeParser() :
                              choices = ["genbank"], nargs = 1,
                              help = "Format to retrieve (only \"genbank\" "
                              "implemented for now)")
+    sp_download.add_argument("-d", "--dir", metavar = "DEST_DIR", type = str,
+                             default = ".",
+                             help = "Destination directory")
     sp_download.set_defaults(action = "download")
     ### ** Return
     return parser
@@ -205,7 +208,7 @@ def main_download(args, stdout, stderr):
     ftp = ftplib.FTP()
     ftp.connect("ftp.ensemblgenomes.org")
     ftp.login() # Anonymous login
-    for genome in info:
+    for i, genome in enumerate(info):
         collection = genome["dbname"].split("_collection")[0] + "_collection"
         ftpPath = FTP_GENBANK_ROOT + "/" + collection + "/" + genome["species"]
         ftpDir = []
@@ -216,10 +219,10 @@ def main_download(args, stdout, stderr):
         # Download
         # http://stackoverflow.com/questions/11573817/how-to-download-a-file-via-ftp-with-python-ftplib
         for target in ftpDir:
-            print(PC.G + "Retrieving %s" % genome["species"] + PC.E)
-            fo = open(target, "w")
+            stderr.write(PC.G + "Retrieving %s (%i/%i)" % (genome["species"], i+1, len(info)) + PC.E)
+            fo = open(os.path.join(args.dir, target), "w")
             target = (FTP_GENBANK_ROOT + "/" +
                      collection + "/" + genome["species"] + "/" + target)
-            print(target)
             ftp.retrbinary("RETR %s" % target, fo.write)
             fo.close()
+            stderr.write("    " + PC.B + "done" + PC.E + "\n")
