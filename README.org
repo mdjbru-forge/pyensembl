@@ -6,30 +6,121 @@ pip install --user --upgrade git+https://github.com/mdjbru-forge/pyensembl
 
 * Basic usage
 
-#+BEGIN_SRC 
-pyensembl search -h
-#+END_SRC
+** Get information about the genomes to download
 
-#+BEGIN_EXAMPLE
-usage: pyensembl search [-h] [-i HTMLFILE] [-d] [-o DIR] [-c] SPECIES
+There are two different ways to obtain the genomes information before
+downloading the actual data.
 
-positional arguments:
-  SPECIES               Query string for the species or strain
+*** Search for all genomes under a taxon node (recommended)
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -i HTMLFILE, --index HTMLFILE
-                        Html index file from Ensembl (if not specified, the
-                        program will download the page from http://bacteria.en
-                        sembl.org/info/website/ftp/index.html)
-  -d, --download        Download the EMBL files. If not specified, just write
-                        the species accession numbers to stdout.
-  -o DIR, --outDir DIR  Destination directory for downloading (default:
-                        current directory)
-  -c, --count           Only send the record count to stdout, not the full
-                        record information
-#+END_EXAMPLE
+If the species of interest can all be found in a given taxon, this is the
+preferred choice as the information retrieval is fast:
 
 #+BEGIN_SRC 
-pyensembl search serratia
+pyensembl genomes -t serratia > serratia.genomes.results
 #+END_SRC
+
+*** Search available species using a string (not recommended)
+
+This is an alternative method, based on searching first through the names of
+available species using a string.
+
+**** Get information about available species
+
+The first step is to get the information about bacteria species available in
+EnsemblBacteria:
+
+#+BEGIN_SRC 
+pyensembl refresh
+#+END_SRC
+
+This will download and save the information in a JSON format in a file
+=.pyensembl-bacteria-species.<timestamp>= in your home folder.
+
+One can check the JSON files available locally with:
+
+#+BEGIN_SRC 
+pyensembl refresh -c
+#+END_SRC
+
+The next steps (search) will automatically use the most recent local JSON file.
+
+**** Search among available species
+
+To search among the available species for a string, use =pyensembl search=. The
+string will be searched in the =name= and =display_name= fields
+(case-insensitive).
+
+#+BEGIN_SRC 
+pyensembl search serratia > search.results
+pyensembl search "Serratia marcescens" > search.results2
+#+END_SRC
+
+The information about matching species is sent to stdout and can be saved to a
+file using the redirection symbol =>=.
+
+**** Retrieve the corresponding genome information
+
+This step can take time as the information is retrieved one genome at a time.
+
+#+BEGIN_SRC 
+pyensembl genomes -f search.results2 > genomes.results
+#+END_SRC
+
+** Download sequence data
+
+(*Note:* For now only the GenBank format download is implemented.)
+
+*** Available formats on EnsemblBacteria ftp
+
+Available formats are:
+- EMBL
+- FASTA
+- GenBank
+- Gff3
+- gtf
+- mySQL
+- rdf
+- tsv
+- vep
+
+**** GenBank format
+
+This format (GenBank flat file) might be the most convenient to get all the
+information in one go. The format is rich, with DNA sequence, CDS, translated
+protein sequences and external references such as GO annotations.
+
+**** FASTA format
+
+For each genome, the available data on EnsemblBacteria as FASTA files is:
+- DNA
+  + DNA / DNA repeat-masked / DNA soft repeat-masked
+  + top level / chromosome / non-chromosomal
+- CDS
+  + All CDS (known, novel and pseudo gene predictions)
+- cDNA
+  + cDNA all / cDNA ab initio
+- peptides
+  + pep all / pep ab initio
+- ncRNA
+  + non-coding RNA genes
+
+*** Download GenBank files for a list of genomes
+
+Use =pyensembl download= to download sequence data for a list of genomes.
+
+Genome information is read from a tab-separated file, e.g. produced by
+=pyensembl genomes=.
+
+The only format of retrieved data is GenBank flat file for now.
+
+Downloaded files can be sent to a destination folder with the =-d= option.
+
+#+BEGIN_SRC 
+# Done previously: retrieve genome information
+pyensembl genomes -t serratia > serratia.genomes.results
+# Download data for those genomes
+mkdir myGenomes
+pyensembl download -g serratia.genomes.results -f genbank -d myGenomes
+#+END_SRC
+

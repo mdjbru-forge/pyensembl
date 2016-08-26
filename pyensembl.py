@@ -12,11 +12,149 @@ import subprocess
 import time
 from bs4 import BeautifulSoup
 
+import datetime
+import requests, sys
+import json
+
 ### ** Parameters
 
 ENSEMBL_INDEX_URL = "http://bacteria.ensembl.org/info/website/ftp/index.html"
+ENSEMBL_REST_SERVER = "http://rest.ensemblgenomes.org"
+
+### *** Colors
+
+# http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+class PC:
+    H = '\033[95m' # header (purple)
+    B = '\033[94m' # blue
+    G = '\033[92m' # green
+    W = '\033[93m' # warning (yellow)
+    Y = '\033[93m'
+    F = '\033[91m' # fail (red)
+    E = '\033[0m' # end colors
+    BD = '\033[1m' # bold
+    U = '\033[4m' # underlined
 
 ### * Functions
+
+### ** timestamp()
+
+def timestamp(padding = 4) :
+    out = "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
+    return out + padding * " "
+
+### ** fileTimestamp()
+
+def fileTimestamp() :
+    out = "{:%Y-%m-%d-%H-%M-%S}".format(datetime.datetime.now())
+    return out
+
+### ** downloadBacteriaSpecies()
+
+def downloadBacteriaSpecies():
+    """Request the list of species from Ensembl Bacteria using the REST API.
+    Code modified from http://rest.ensemblgenomes.org/documentation/info/species
+
+    Returns:
+        json object: The species information
+    """
+    server = ENSEMBL_REST_SERVER
+    ext = "/info/species?division=EnsemblBacteria"
+    print(PC.B + timestamp() + "Downloading information about species in EnsemblBacteria" + PC.E)
+    print(PC.Y + "Server: %s" % server + PC.E)
+    print(PC.Y + "Request: %s" % ext + PC.E)
+    r = requests.get(server + ext,
+                     headers = {"Content-Type" : "application/json"})
+    if not r.ok:
+        r.raise_for_status()
+        sys.exit()
+    print(PC.G + timestamp() + "Request successful" + PC.E)
+    return r.json()
+
+### ** saveJson(jsonData, outFile)
+
+def saveJson(jsonData, outFile):
+    """Save json data to an output file
+
+    Args:
+        jsonData (json object): Data to save
+        outFile (str): Path to the output file
+
+    Returns:
+        None
+    """
+    print(PC.B + timestamp() + "Saving JSON data to %s" % outFile + PC.E)
+    with open(outFile, "w") as fo:
+        json.dump(jsonData, fo)
+    print(PC.G + timestamp() + "Saving successfull" + PC.E)
+
+### ** loadJson(inFile)
+
+def loadJson(inFile):
+    """Load json data from an input file
+
+    Args:
+        inFile (str): Path to the input file
+
+    Returns:
+        A json object
+    """
+    #print(PC.B + timestamp() + "Loading JSON data from %s" % inFile + PC.E)
+    with open(inFile, "r") as fi:
+        data = json.load(fi)
+    #print(PC.G + timestamp() + "Loading successfull" + PC.E)
+    return data
+
+### ** retrieveGenomeInfo(speciesName)
+
+def retrieveGenomeInfo(speciesName, stderr = sys.stderr):
+    """Use the REST API to get the genome information for a species
+    http://rest.ensemblgenomes.org/documentation/info/info_genome
+
+    Args:
+        speciesName (str): Name of the species, "name" field of the species JSON
+          object
+
+    Returns:
+        A JSON object holding the genome information
+    """
+    server = ENSEMBL_REST_SERVER
+    ext = "/info/genomes/" + speciesName + "?"
+    stderr.write(PC.B + timestamp() + "Downloading information about genome in EnsemblBacteria" + PC.E + "\n")
+    stderr.write(PC.Y + "Server: %s" % server + PC.E + "\n")
+    stderr.write(PC.Y + "Request: %s" % ext + PC.E + "\n")
+    r = requests.get(server + ext,
+                     headers = {"Content-Type" : "application/json"})
+    if not r.ok:
+        r.raise_for_status()
+        sys.exit()
+    stderr.write(PC.G + timestamp() + "Request successful" + PC.E + "\n")
+    return r.json()
+
+### ** retrieveGenomesTaxonName(taxonName)
+
+def retrieveGenomesTaxonName(taxonName, stderr = sys.stderr):
+    """Use the REST API to get the genomes information for a taxon
+    http://rest.ensemblgenomes.org/documentation/info/info_genomes_taxonomy
+
+    Args:
+        taxonName (str): Name of the taxon
+
+    Returns:
+        A JSON object holding the genomes information
+    """
+    server = ENSEMBL_REST_SERVER
+    ext = "/info/genomes/taxonomy/" + taxonName + "?"
+    stderr.write(PC.B + timestamp() + "Downloading information about genomes in EnsemblBacteria" + PC.E + "\n")
+    stderr.write(PC.Y + "Server: %s" % server + PC.E + "\n")
+    stderr.write(PC.Y + "Request: %s" % ext + PC.E + "\n")
+    r = requests.get(server + ext,
+                     headers = {"Content-Type" : "application/json"})
+    if not r.ok:
+        r.raise_for_status()
+        sys.exit()
+    stderr.write(PC.G + timestamp() + "Request successful" + PC.E + "\n")
+    return r.json()
 
 ### ** downloadUrl(url, outFile = None)
 
@@ -117,6 +255,76 @@ def filterAccNumBySpecies(spAccMapping, species) :
             o[k] = v
     return o
 
+### ** dumpEnsemblInfoSpecies(speciesList)
+
+def dumpEnsemblInfoSpecies(speciesList):
+    """Convert a list of bacteria species information to a string ready to
+    be written to a file.
+
+    Args:
+        speciesList (list): List of dict from downloadBacteriaSpecies()["species"]
+          e.g. : {u'accession': u'GCA_001187685.1',
+                  u'aliases': [u'chryseobacterium sp. hurlbut01',
+                    u'chryseobacterium sp. hurlburt 01',
+                    u'chryseobacterium sp. hurlbut01 str. hurlburt01 str. hurlburt 01'],
+                  u'assembly': u'ASM118768v1',
+                  u'common_name': None,
+                  u'display_name': u'Chryseobacterium sp. Hurlbut01',
+                  u'division': u'EnsemblBacteria',
+                  u'groups': [u'core'],
+                  u'name': u'chryseobacterium_sp_hurlbut01',
+                  u'release': 85,
+                  u'taxon_id': u'1681828'}
+
+    Returns:
+        str
+    """
+    FIELDS = ["accession", "assembly", "common_name", "display_name",
+              "division", "name", "release", "taxon_id"]
+    out = ""
+    out += "\t".join(FIELDS) + "\n"
+    for sp in speciesList:
+        out += "\t".join([str(sp[f]) for f in FIELDS]) + "\n"
+    return out
+
+### ** dumpEnsemblInfoGenomes(genomeList)
+
+def dumpEnsemblInfoGenomes(genomeList):
+    """Convert a list of bacteria species information to a string ready to
+    be written to a file.
+
+    Args:
+        genomeList (list): List of dict holding genomes information
+
+    Returns:
+        str
+    """
+    FIELDS = [u'species_id',
+               u'division',
+               u'is_reference',
+               u'has_pan_compara',
+               u'strain',
+               u'base_count',
+               u'assembly_name',
+               u'assembly_id',
+               u'assembly_level',
+               u'serotype',
+               u'genebuild',
+               u'taxonomy_id',
+               u'has_variations',
+               u'has_other_alignments',
+               u'species',
+               u'has_peptide_compara',
+               u'species_taxonomy_id',
+               u'has_genome_alignments',
+               u'dbname',
+               u'name']
+    out = ""
+    out += "\t".join(FIELDS) + "\n"
+    for genome in genomeList:
+        out += "\t".join([str(genome[f]) for f in FIELDS]) + "\n"
+    return out
+    
 ### * Classes
 
 ### ** EMBLspeciesIndex
